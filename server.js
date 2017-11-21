@@ -1,5 +1,6 @@
 var express = require("express");
 var bodyParser = require("body-parser");
+var logger = require("morgan");
 var mongoose = require("mongoose");
 
 //Scraping tools
@@ -17,6 +18,7 @@ var PORT = process.env.PORT || 3000;
 //app.set("view engine", "handlebars");
 
 //Use body-parser for form submissions
+app.use(logger("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.text());
@@ -26,15 +28,15 @@ app.use(express.static("public"));
 
 //Setting up mongoose
 //Connecting to Mongo DB
-//mongoose.Promise = Promise;
-//mongoose.connect("mongodb://localhost/movienewsdb", {
-	//useMongoClient: true
-//});
+mongoose.Promise = Promise;
+mongoose.connect("mongodb://localhost/movienewsdb", {
+	useMongoClient: true
+});
 
 //Routes
 
 //A GET route for scraping collider.com
-app.get("/scrape", function(req, res){
+app.get("/", function(req, res){
 	axios.get("http://collider.com/all-news/").then(function(response){
 		var $ = cheerio.load(response.data);
 			
@@ -53,7 +55,7 @@ app.get("/scrape", function(req, res){
 			db.Article
 				.create(result)
 				.then(function(dbArticle){
-					res.send()
+					res.json(dbArticle);
 				})
 				.catch(function(err){
 					res.json(err);
@@ -68,7 +70,10 @@ app.get("/articles", function(req, res){
 	db.Article
 	.find({})
 	.then(function(dbArticle){
-		res.json(dbArticle);
+		var articleObject = {
+			articleScrape: dbArticle
+		}
+		res.render("article", articleObject);
 	})
 	.catch(function(err){
 		res.json(err);
